@@ -1,19 +1,16 @@
 '''
 TODO :
-ask if command prefix is needed
-
--> randomise participants for the purpose of Debate Rooms
-
--> Another bot to randomise Championship teams who may want to compete with teams
-from other groups too - these may be moderated and scored for the purpose of the
-wildcard - No House Vote 
+->  get rules and format details
+->  randomise participants for the purpose of Debate Rooms
+->  Another bot to randomise Championship teams who may want to compete with teams
+    from other groups too - these may be moderated and scored for the purpose of the
+    wildcard - No House Vote 
 '''
 
 import discord
 import random
 
 client = discord.Client()
-thisBot = client.user
 
 ########################################
 
@@ -22,7 +19,7 @@ rules = {'rule 1' : 'sample rule 1 text',
          'rule 3' : 'sample rule 3 text',
          'rule 4' : 'sample rule 4 text'}
 
-allRulesList = ['-> ' + ruleNum + ' : ' + rule for ruleNum, rule in rules.items()]
+allRulesList = [f'-> {ruleNum} : {rule}' for ruleNum, rule in rules.items()]
 allRules = 'All Rules:\n' + '\n'.join(allRulesList)
 
 debateFormatInfo = '''Hello users,
@@ -31,7 +28,6 @@ You can read about this here : <link>'''
 
 commandPrefix = '!'
 
-creatingList = False
 randomRoomUsers = []
 maxCapacity = 0
 splitDelimiters = ['\\', '/', 'vs', 'v']
@@ -44,13 +40,12 @@ removeSpace = lambda s : s.replace(' ','')
 @client.event
 async def on_message(message):
     
-    global randomRoomUsers, creatingList, maxCapacity
+    global randomRoomUsers, maxCapacity
     
-    text = message.content.strip()
+    text = message.content.strip().lower()
     author = str(message.author)
-    message.content = message.content.lower()
     
-    if author == thisBot:
+    if author == client.user:
         return
 
     # Check for command prefix
@@ -65,10 +60,9 @@ async def on_message(message):
     # State debate format details
     if text == 'debate format':
         await message.channel.send(debateFormatInfo)
-        return
     
     # State Rules
-    if text.startswith('rule'):
+    elif text.startswith('rule'):
         if (text in rules):
             rule = rules[text]
             await message.channel.send('->'+  text + ' : ' + rule)
@@ -76,30 +70,29 @@ async def on_message(message):
             await message.channel.send(allRules)
         else:
             await message.channel.send("Rule does not exist")
-        return
 
     ############################################################
 
     # Start debate with max capacity
-    if removeSpace(text).startswith('debatewith'):
+    elif removeSpace(text).startswith('debatewith'):
         maxStr = removeSpace(text[text.index('h')+1:])
         if maxStr.isdigit():
             maxCapacity = int(maxStr)
-            creatingList = True
+            randomRoomUsers = []
+            await message.channel.send(f'Creating debate with {maxCapacity} members')
         else:
-            await message.channel.send("'" + maxStr + "'" + " is an invalid number")
-        return
+            await message.channel.send(f'\'{maxStr}\' is an invalid number')
     
     # Add user to list
-    if text == 'add me':
+    elif text == 'add me':
         if author in randomRoomUsers:
-            await message.channel.send(author + " is already in list")
+            await message.channel.send(f'{author} is already in list')
         else:
             if len(randomRoomUsers) == maxCapacity:
                 await message.channel.send(f'Max capacity ({maxCapacity}) reached ')
             else:
                 randomRoomUsers.append(author)
-                await message.channel.send("Added " + author + " to list")
+                await message.channel.send(f'Added {author} to list')
                 if len(randomRoomUsers) == maxCapacity:
                     random.shuffle(randomRoomUsers)
                     mid = len(randomRoomUsers)//2
@@ -107,11 +100,18 @@ async def on_message(message):
                     sections = [randomRoomUsers[:mid], randomRoomUsers[mid:]]
                     random.shuffle(sections)
                     
-                    await message.channel.send("For : " + ', '.join(sections[0]))
-                    await message.channel.send("Against : " + ', '.join(sections[1]))
-                    
-        return
-    
+                    await message.channel.send('For : '     + ', '.join(sections[0]))
+                    await message.channel.send('Against : ' + ', '.join(sections[1]))
+
+    # Print list
+    elif text == 'print':
+        await message.channel.send("List: " + ', '.join(randomRoomUsers))
+        
+    # Clear list
+    elif text == 'clear':
+        randomRoomUsers = []
+        await message.channel.send("List cleared")
+        
     ############################################################
         
 # Greet new users on DM
