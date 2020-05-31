@@ -107,8 +107,8 @@ async def on_message(message):
                     sections = [randomRoomUsers[:mid], randomRoomUsers[mid:]]
                     random.shuffle(sections)
                     
-                    await message.channel.send("A : " + ', '.join(sections[0]))
-                    await message.channel.send("B : " + ', '.join(sections[1]))
+                    await message.channel.send("For : " + ', '.join(sections[0]))
+                    await message.channel.send("Against : " + ', '.join(sections[1]))
                     
         return
     
