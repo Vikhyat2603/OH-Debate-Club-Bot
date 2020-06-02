@@ -448,12 +448,12 @@ async def on_message(message):
 
         await message.channel.send(f'Debate {debateID} stances balanced')
 
-        membersStr = ', '.join(map(str, members))
+        membersStr = ', '.join(list(map(str, members)))
         maxCapacity = debateList['max']
         nMembers = debateList['nMembers']
         moderator = debateList['mod']
 
-        await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {moderator} | Members : [{members}]')
+        await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {moderator} | Members : [{membersStr}]')
 
     # Close debate
     elif text.startswith('close'):
