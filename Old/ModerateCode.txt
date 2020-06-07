@@ -1,0 +1,33 @@
+    # Moderate debate
+    elif text.startswith('moderate'):
+
+        # Ensure author has 'Debate Moderator' role
+        isDebMod = discord.utils.get(author.roles, name="Debate Moderator")
+        if not isDebMod:
+            await message.channel.send(f'User {author} does not have the role \'Debate Moderator\'')
+            return
+
+        # Ensure debate ID is valid
+        debateID = await fetchNumber(message, text[8:])
+        if debateID is None:
+            return
+
+        # Ensure debate <ID> is open
+        if debateID not in openIDs:
+            await message.channel.send(f'Debate {debateID} is not open')
+            return
+
+        # Ensure debate <ID> does not already have mod
+        debateMod = debateLists[debateID]['mod']
+        if debateMod is not None:
+            await message.channel.send(f'Debate {debateID} already has moderator {debateMod}')
+            return
+
+        # Assign mod role to author
+        debateLists[debateID]['mod'] = author
+
+        modRoleName = f'Debate {debateID} : Mod'
+        modRole = discord.utils.get(guild.roles, name=modRoleName)
+        await author.add_roles(modRole)
+
+        await message.channel.send(f'Added {authorStr} as moderator to debate {debateID}')
