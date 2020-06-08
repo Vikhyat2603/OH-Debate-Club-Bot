@@ -97,12 +97,6 @@ async def on_message(message):
 
     text = despace(text.lower())
 
-    if author == client.user:
-        if text.startswith('starteddebate'):
-            await message.add_reaction(thumbEmoji)
-            await message.add_reaction(mEmoji)
-        return
-
     # Check for command prefix
     if not text.startswith(commandPrefix):
         return
@@ -184,8 +178,11 @@ async def on_message(message):
         await generalChannel.send(allRules)
 
         openIDs.add(debateID)
-        await message.channel.send(f'Started debate **{debateID}** with max. {maxCapacity} people\
+        myMsg = await message.channel.send(f'Started debate **{debateID}** with max. {maxCapacity} people\
 		\nReact with {thumbEmoji} to be added, or with {mEmoji} to moderate!')
+
+        await myMsg.add_reaction(thumbEmoji)
+        await myMsg.add_reaction(mEmoji)
 
     # Balance stances
     elif text.startswith('balance'):
@@ -397,6 +394,7 @@ async def on_reaction_remove(reaction, user):
     text = reaction.message.content
     guild = reaction.message.guild
 
+    # Ensure reaction was on bot's message and not by the bot
     if (reaction.message.author != client.user) or (user == client.user):
         return
 
