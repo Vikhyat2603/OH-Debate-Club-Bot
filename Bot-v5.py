@@ -1,21 +1,22 @@
 '''
 Changes (since last meeting):
-	DONE :
-		->  DONE 'Moderator' role can close any debate
-		->  DONE only admins can start debates
-		->  DONE show <id> also lists members
-		->  DONE balance <id>
-		->  DONE moderate by reacting with M?
-		->  DONE opt-out by de-selecting
-		->  DONE !query (anonymous?)
-		->  DONE dont let ppl opt-out
-		->  DONE let debate mods and mods remove person <> from debate <>
-	TODO :
-		->  send motion at fixed time
-		->  create manual
-		->  get rules and format details
-		->  wait-list people if debate full
-		->  incorporate 'knock knock' message (?)
+    DONE :
+    ->  DONE 'Moderator' role can close any debate
+    ->  DONE only admins can start debates
+    ->  DONE show <id> also lists members
+    ->  DONE balance <id>
+    ->  DONE moderate by reacting with M?
+    ->  DONE opt-out by de-selecting
+    ->  DONE !query (anonymous?)
+    ->  DONE dont let ppl opt-out
+    ->  DONE let debate mods and mods remove person <> from debate <>
+    TODO :
+    ->  send motion at fixed time
+    ->  create manual
+    ->  get rules and format details
+    ->  wait-list people if debate full
+    ->  incorporate 'knock knock' message (?)
+    -> debate name
 '''
 
 import discord
@@ -36,9 +37,7 @@ debateFormatInfo = '''Hello users,
 We are following the -- debate format
 You can read about this here : <link>'''
 
-myGuild = client.get_guild(714853767841054721)
-
-availableIDs = set(list(range(10000)))
+availableIDs = set(list(range(100)))
 openIDs = set()
 debateLists = {}
 
@@ -81,15 +80,24 @@ async def on_message(message):
     if (authorStr == 'Vikhyat#5088') and text.startswith('!debug'):
         code = text[6:]
         try:
-            await message.channel.send(eval(code))
+            await message.channel.send(str(eval(code)))
         except Exception as e:
-            await message.channel.send(e)
+            await message.channel.send(f'Exception : {e}')
 
+    if (authorStr == 'Vikhyat#5088') and text.startswith('!exec'):
+        code = text[6:]
+        try:
+            await message.channel.send(str(exec(code)))
+        except Exception as e:
+            await message.channel.send(f'Exception : {e}')
+            
     # Pass queries to the queries channel
     if text.startswith('!query'):
+        ohGuild = client.get_guild(714853767841054721)
+        
         query = text[6:]
         queryMessage = ('-' * 80) + f'\nUser : {authorStr}\nQuery : {query}'
-        queryChannel = discord.utils.get(myGuild.channels, name='queries')
+        queryChannel = discord.utils.get(ohGuild.channels, name='queries')
         await queryChannel.send(queryMessage)
         await message.channel.send('Sent:\n' + queryMessage)
 
@@ -139,7 +147,7 @@ async def on_message(message):
             return
 
         # Initialise debate details
-        debateID = list(availableIDs)[0]
+        debateID = min(availableIDs)
         availableIDs.remove(debateID)
         debateLists[debateID] = {'nMembers': 0,
                                  'for': [],
@@ -166,13 +174,13 @@ async def on_message(message):
 
         for channel in channels:
             await channel.set_permissions(everyoneRole, view_channel=False)
-            await channel.set_permissions(modRole, view_channel=True)
 
         await forChannel.set_permissions(forRole, view_channel=True)
         await againstChannel.set_permissions(againstRole, view_channel=True)
 
         await generalChannel.set_permissions(forRole, view_channel=True)
         await generalChannel.set_permissions(againstRole, view_channel=True)
+        await generalChannel.set_permissions(modRole, view_channel=True)
 
         # Greet and send all rules on general channel
         await generalChannel.send(allRules)
@@ -279,6 +287,7 @@ async def on_message(message):
             member = guild.get_member(memberID)
             forRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : For')
             debateList['for'].remove(member)
+            debateList['members'] -= 1
 
             await member.remove_roles(forRole)
             await message.channel.send(f'Removed {str(member)} from debate {debateID}')
@@ -287,6 +296,7 @@ async def on_message(message):
             member = guild.get_member(memberID)
             againstRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Against')
             debateList['against'].remove(member)
+            debateList['members'] -= 1
 
             await member.remove_roles(againstRole)
             await message.channel.send(f'Removed {str(member)} from debate {debateID}')
