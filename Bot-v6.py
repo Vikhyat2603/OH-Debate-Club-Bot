@@ -67,12 +67,11 @@ print('Started Bot')
 ########################################
 
 async def logError(myText):
-    expChannel = discord.utils.get(guild.channels, name=f'experiments')
+    ohGuild = client.get_guild(714853767841054721)
+    expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
     await expChannel.send('Log: ' + str(myText))
 
 # Greet new users on DM
-
-
 @client.event
 async def on_member_join(member):
     await member.create_dm()
@@ -444,7 +443,7 @@ async def on_message(message):
                 await message.channel.send(f'Removed {str(member)} from debate {debateID}')
 
             # Remove mod role from author
-            elif memberID == debateMod.id:
+            elif (debateMod is not None) and (memberID == debateMod.id):
                 debateList['mod'] = None
                 modRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Mod')
                 await author.remove_roles(modRole)
@@ -452,7 +451,7 @@ async def on_message(message):
 
             else:
                 await message.channel.send(f'Member not found in debate')
-                return
+  
 
         # Close debate
         elif text.startswith('close'):
@@ -540,7 +539,7 @@ async def on_message(message):
 
         ############################################################
     except Exception as e:
-        await logError(f'!!! {type(e).__name__} !!! :\n{e}')
+        await logError(f'**{type(e).__name__}** :\n{e}')
 
 ########################################
 
