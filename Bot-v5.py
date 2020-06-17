@@ -75,7 +75,7 @@ async def fetchNumber(message, text):
 # Respond to messages
 @client.event
 async def on_message(message):
-    global availableIDs, usedIDs, debateLists
+    global availableIDs, usedIDs, debateLists, rules
 
     text = message.content
     author = message.author
@@ -190,8 +190,8 @@ async def on_message(message):
         await generalChannel.set_permissions(againstRole, view_channel=True)
         await generalChannel.set_permissions(modRole, view_channel=True)
 
-        # Greet and send all rules on general channel
-        await generalChannel.send(allRules)
+##        # Greet and send all rules on general channel
+##        await generalChannel.send(allRules)
 
         openIDs.add(debateID)
         myMsg = await message.channel.send(f'Started debate **{debateID}** with max. {maxCapacity} people\
