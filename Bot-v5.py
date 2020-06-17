@@ -16,7 +16,7 @@ Changes (since last meeting):
     ->  get rules and format details
     ->  wait-list people if debate full
     ->  incorporate 'knock knock' message (?)
-    -> debate name
+    ->  debate name
 '''
 
 import discord
@@ -32,6 +32,12 @@ rules = {'rule1': 'sample rule 1 text',
 
 allRulesList = [f'-> {ruleNum} : {rule}' for ruleNum, rule in rules.items()]
 allRules = 'All Rules:\n' + '\n'.join(allRulesList)
+
+welcomeMessage = '''    Thank you for joining Openhouse Debate Club on Discord, we are so excited to have you on board!
+
+    Don’t worry if the new system seems challenging, we are here to help. All the channels here are like different group chats where you can discuss anything you want (channel=chat). Our announcements page will show you the debates you can sign up for. On that debate text, please select the ‘👍’ (thumbs-up) emoji. You will immediately be placed into your team. Introduce yourself to your teammates and get ready to battle it out in your debate! Motions and links for your debate will be sent to you on the channel itself.  
+
+    Please feel free to message us if you are facing any difficulties. Until then, choose to be better :)'''
 
 debateFormatInfo = '''Hello users,
 We are following the -- debate format
@@ -55,8 +61,8 @@ print('Started Bot')
 @client.event
 async def on_member_join(member):
     await member.create_dm()
-    await member.dm_channel.send(f'Hi {member.name}, welcome to the OpenHouse Debate Club Server!')
-    await member.dm_channel.send(allRules)
+    await member.dm_channel.send(f'Hi {member.name}, welcome to the **Openhouse Debate Club** Server!')
+    await member.dm_channel.send(welcomeMessage)
 
 
 # Fetch a number from text
@@ -125,7 +131,9 @@ async def on_message(message):
         if (text in rules):
             rule = rules[text]
             await message.channel.send(f'->{text}:{rule}')
-        elif text in ['rules', 'ruleall', 'rulesall']:
+        elif text in ['rule', 'rules', 'ruleall', 'rulesall']:
+            allRulesList = [f'-> {ruleNum} : {rule}' for ruleNum, rule in rules.items()]
+            allRules = 'All Rules:\n' + '\n'.join(allRulesList)
             await message.channel.send(allRules)
         else:
             await message.channel.send("Rule does not exist")
