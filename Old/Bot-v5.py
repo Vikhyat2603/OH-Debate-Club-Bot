@@ -17,6 +17,12 @@ Changes (since last meeting):
     ->  wait-list people if debate full
     ->  incorporate 'knock knock' message (?)
     ->  debate name
+
+    TRY OUT TRY_EXCEPT FOR MAIN FUNCTION
+
+    Change sign up feature
+    moderator cant participate
+    Change debatewith command : !debate with 10 at 3
 '''
 
 import discord
@@ -295,7 +301,7 @@ async def on_message(message):
             member = guild.get_member(memberID)
             forRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : For')
             debateList['for'].remove(member)
-            debateList['members'] -= 1
+            debateList['nMembers'] -= 1
 
             await member.remove_roles(forRole)
             await message.channel.send(f'Removed {str(member)} from debate {debateID}')
@@ -304,7 +310,7 @@ async def on_message(message):
             member = guild.get_member(memberID)
             againstRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Against')
             debateList['against'].remove(member)
-            debateList['members'] -= 1
+            debateList['nMembers'] -= 1
 
             await member.remove_roles(againstRole)
             await message.channel.send(f'Removed {str(member)} from debate {debateID}')
@@ -364,9 +370,9 @@ async def on_message(message):
         await againstRole.delete()
         await modRole.delete()
 
-        await message.channel.send(f'Debate {debateID} closed')
-
         availableIDs.add(debateID)
+        await message.channel.send(f'Debate {debateID} closed')
+        
 
     # Show list
     elif text.startswith('show'):
