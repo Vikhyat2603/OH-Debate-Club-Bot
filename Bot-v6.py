@@ -28,11 +28,11 @@ Changes (since last meeting):
     --- 17-Jun-20
     ->  Discussion room
     ->  wait-list people if debate full
-    ->  enable knock feature
 '''
 
 import discord
 import random
+from time import sleep
 
 client = discord.Client()
 
@@ -85,6 +85,18 @@ async def fetchNumber(message, text):
         return int(text)
     await message.channel.send(f'\'{text}\' is an invalid number')
 
+
+# Sends and deletes a message every 29 minutes to keep bot awake
+@client.event
+async def on_ready():
+    ohGuild = client.get_guild(714853767841054721)
+    expChannel = discord.utils.get(ohGuild.channels, name='experiments')
+    
+    await expChannel.send('Bot Online.')
+    while True:    
+        myMsg = await expChannel.send('.')
+        await myMsg.delete()
+        sleep(1750)
 
 # Respond to messages
 @client.event
@@ -222,9 +234,8 @@ async def on_message(message):
             myMsg = await message.channel.send(f'Started debate **{debateID}** with max. {maxCapacity} people\
                     \nWrite *!add me {debateID}*  to be added, or *!moderate {debateID}*  to moderate!')
 
-            # dmodChannel = discord.utils.get(guild.channels, name=f'debate-moderators')
-            # await dmodChannel.send('Knock Knock. A Debate is about to Happen.
-            # Anyone willing to Moderate?')
+            dmodChannel = discord.utils.get(guild.channels, name=f'debate-moderators')
+            await dmodChannel.send('Knock Knock. A Debate is about to Happen. Anyone willing to Moderate?')
 
         # Add participant to debate
         elif text.startswith('addme'):
@@ -451,7 +462,6 @@ async def on_message(message):
 
             else:
                 await message.channel.send(f'Member not found in debate')
-  
 
         # Close debate
         elif text.startswith('close'):
@@ -529,8 +539,7 @@ async def on_message(message):
 
             # Print debate <ID> details
             debateList = debateLists[debateID]
-            members = ', '.join(
-                map(str, debateList['for'] + debateList['against']))
+            members = ', '.join(map(str, debateList['for'] + debateList['against']))
             maxCapacity = debateList['max']
             nMembers = debateList['nMembers']
             moderator = str(debateList['mod'])
