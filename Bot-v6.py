@@ -33,6 +33,7 @@ Changes (since last meeting):
 import discord
 import random
 from time import sleep
+import asyncio
 
 client = discord.Client()
 
@@ -91,12 +92,11 @@ async def fetchNumber(message, text):
 async def on_ready():
     ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name='experiments')
-    
     await expChannel.send('Bot Online.')
     while True:    
         myMsg = await expChannel.send('.')
         await myMsg.delete()
-        sleep(1750)
+        await asyncio.sleep(1750)
 
 # Respond to messages
 @client.event
