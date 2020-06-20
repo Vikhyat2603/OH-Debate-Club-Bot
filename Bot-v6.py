@@ -70,7 +70,7 @@ print('Started Bot')
 async def logError(myText):
     ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
-    await expChannel.send('Log: ' + str(myText))
+    await expChannel.send('<@!693797662960386069> Log: ' + str(myText))
 
 # Greet new users on DM
 @client.event
@@ -92,11 +92,11 @@ async def fetchNumber(message, text):
 async def on_ready():
     ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name='experiments')
-    await expChannel.send('Bot Online.')
+    await expChannel.send('<@!693797662960386069> Bot Online.')
     while True:    
         myMsg = await expChannel.send('.')
         await myMsg.delete()
-        await asyncio.sleep(1750)
+        await asyncio.sleep(1500)
 
 # Respond to messages
 @client.event
@@ -213,22 +213,19 @@ async def on_message(message):
             voiceChannel = await guild.create_voice_channel(f'debate-{debateID}-voice', category=category)
 
             # Restrict Channels according to roles
-            channels = [forChannel, againstChannel,
-                        generalChannel, voiceChannel]
+            channels = [forChannel, againstChannel, generalChannel]
+            roles = [forRole, againstRole, modRole]
 
             everyoneRole = discord.utils.get(guild.roles, name="@everyone")
 
             for channel in channels:
                 await channel.set_permissions(everyoneRole, view_channel=False)
 
+            for role in roles:
+                await generalChannel.set_permissions(role, view_channel=True)
+
             await forChannel.set_permissions(forRole, view_channel=True)
             await againstChannel.set_permissions(againstRole, view_channel=True)
-
-            commonChannels = [generalChannel, voiceChannel]
-            for comChannel in commonChannels:
-                await comChannel.set_permissions(forRole, view_channel=True)
-                await comChannel.set_permissions(againstRole, view_channel=True)
-                await comChannel.set_permissions(modRole, view_channel=True)
 
             openIDs.add(debateID)
             myMsg = await message.channel.send(f'Started debate **{debateID}** with max. {maxCapacity} people\
