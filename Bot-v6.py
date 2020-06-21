@@ -95,8 +95,8 @@ async def on_ready():
     await expChannel.send('<@!693797662960386069> Bot Online.')
     while True:    
         myMsg = await expChannel.send('.')
-        await myMsg.delete()
         await asyncio.sleep(1500)
+        await myMsg.delete()
 
 # Respond to messages
 @client.event
