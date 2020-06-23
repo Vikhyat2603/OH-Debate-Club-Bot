@@ -20,6 +20,9 @@ Changes (since last meeting):
     ->  Moderators join by "!moderator <ID>"
     ->  Moderators can't be participants
 
+    --23-Jun-20
+    ->  debateLists is now saved and sent as string with every action
+
     TODO :
     ->  send motion at fixed time
     ->  create manual
@@ -34,6 +37,9 @@ import discord
 import random
 from time import sleep
 import asyncio
+import json
+from os import listdir
+from socket import gethostname
 
 client = discord.Client()
 
@@ -55,21 +61,30 @@ We are following the -- debate format
 You can read about this here : <link>'''
 
 availableIDs = set(list(range(1, 1000)))
-openIDs = set()
 debateLists = {}
+openIDs = set()
+
+debugMode = (gethostname() == 'VKSN-Desktop')
+
+async def getDebateLists(guild):
+    expChannel = discord.utils.get(guild.channels, name='experiments')
+    
+    async for msg in expChannel.history(limit=100, oldest_first=False):
+        if (msg.author.id == client.user.id) and (msg.content.startswith('<log>')):             
+            return eval(msg.content[5:])
 
 despace = lambda s: s.replace(' ', '')
-
 commandPrefix = '!'
 thumbEmoji = '👍'
 mEmoji = 'Ⓜ'
 
-print('Started Bot')
 ########################################
 
 async def logError(myText):
     ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
+    if debugMode:
+        print(str(myText))
     await expChannel.send('<@!693797662960386069> Log: ' + str(myText))
 
 
@@ -84,62 +99,67 @@ async def on_member_join(member):
 # Fetch a number from text
 async def fetchNumber(message, text):
     if text.isdigit():
-        return int(text)
+        return text
     await message.channel.send(f'\'{text}\' is an invalid number')
 
 
-# Sends and deletes a message every 29 minutes to keep bot awake
+# Informs me when bot comes online
 @client.event
 async def on_ready():
+    global availableIDs, openIDs, debateLists
+    
+    print('Started Bot')
     ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name='experiments')
     await expChannel.send('<@!693797662960386069> Bot Online.')
-    while True:    
-        myMsg = await expChannel.send('.')
-        await asyncio.sleep(1500)
-        await myMsg.delete()
-
-# Check if a debate is open by checking if it's category exists
-def debateOpen(guild, debateID):
-    catName = f'Debate {debateID}'
-    return (catName == str(discord.utils.get(guild.categories, name=catName)))
-
+    
+    debateLists = await getDebateLists(ohGuild)
+    openIDs = set(debateLists.keys())
+    availableIDs = availableIDs.difference(set(map(int, openIDs)))
+    
 # Respond to messages
 @client.event
 async def on_message(message):
     try:
-        global availableIDs, usedIDs, debateLists, rules
-
+        global rules, availableIDs, openIDs, debateLists
+        
         text = message.content
         author = message.author
         authorStr = str(author)
+        authorID = author.id
         guild = message.guild
+        expChannel = discord.utils.get(guild.channels, name='experiments')
 
         # Let Vikhyat debug code
-        if (authorStr == 'Vikhyat#5088') and text.startswith('!debug'):
-            code = text[6:]
-            try:
-                await message.channel.send(str(eval(code)))
-            except Exception as e:
-                await message.channel.send(f'{type(e).__name__} :\n{e}')
+        if (authorStr == 'Vikhyat#5088'):
+            if text.startswith('!debug'):
+                code = text[6:]
+                try:
+                    await message.channel.send(str(eval(code)))
+                except Exception as e:
+                    await message.channel.send(f'{type(e).__name__} :\n{e}')
 
-        if (authorStr == 'Vikhyat#5088') and text.startswith('!exec'):
-            code = text[6:]
-            try:
-                await message.channel.send(str(exec(code)))
-            except Exception as e:
-                await message.channel.send(f'{type(e).__name__} :\n{e}')
+            elif text.startswith('!exec'):
+                code = text[6:]
+                try:
+                    await message.channel.send(str(exec(code)))
+                except Exception as e:
+                    await message.channel.send(f'{type(e).__name__} :\n{e}')
+
+            elif text.startswith('!clear'):
+                await expChannel.send('<log>{}')
+                await message.channel.send(f'Emptied debateLists')
+
+            elif text.startswith('!check'):
+                await message.channel.send(await getDebateLists(guild))
 
         # Pass queries to the queries channel
         if text.startswith('!query'):
-            ohGuild = client.get_guild(714853767841054721)
-
             query = text[6:]
             queryMessage = ('-' * 80) + f'\nUser : {authorStr}\nQuery : {query}'
-            queryChannel = discord.utils.get(ohGuild.channels, name='queries')
+            queryChannel = discord.utils.get(guild.channels, name='queries')
             await queryChannel.send(queryMessage)
             await message.channel.send('Sent:\n' + queryMessage)
-
             return
 
         text = despace(text.lower())
@@ -152,15 +172,17 @@ async def on_message(message):
         text = text[len(commandPrefix):]
         if text in ['hello', 'hi', 'hey']:
             await message.channel.send(f'Hello there, {author}!')
+            return
 
         ############################################################
-
+        
         # State debate format details
-        elif text == 'debateformat':
+        if text == 'debateformat':
             await message.channel.send(debateFormatInfo)
+            return
 
         # State Rules
-        elif text.startswith('rule'):
+        if text.startswith('rule'):
             if (text in rules):
                 rule = rules[text]
                 await message.channel.send(f'->{text}:{rule}')
@@ -170,11 +192,12 @@ async def on_message(message):
                 await message.channel.send(allRules)
             else:
                 await message.channel.send("Rule does not exist")
+            return
 
         ############################################################
-
+        
         # Start debate with fixed max capacity
-        elif text.startswith('debatewith'):
+        if text.startswith('debatewith'):
 
             # Ensure author has 'Moderator' role
             isMod = discord.utils.get(author.roles, name="Moderator")
@@ -195,16 +218,15 @@ async def on_message(message):
                 return
 
             maxCapacity = int(maxCapStr)
-
             # Initialise debate details
-            debateID = min(availableIDs)
-            availableIDs.remove(debateID)
+            debateID = str(min(availableIDs))
+            availableIDs.remove(int(debateID))
             debateLists[debateID] = {'nMembers': 0,
                                      'for': [],
                                      'against': [],
-                                     'mod': None,
+                                     'modID': None,
                                      'max': maxCapacity}
-
+            
             # Create roles : for, against and mod
             forRole = await guild.create_role(name=f'Debate {debateID} : For')
             againstRole = await guild.create_role(name=f'Debate {debateID} : Against')
@@ -237,8 +259,9 @@ async def on_message(message):
             myMsg = await message.channel.send(f'Started debate **{debateID}** with max. {maxCapacity} people\
                     \nWrite *!add me {debateID}*  to be added, or *!moderate {debateID}*  to moderate!')
 
-            dmodChannel = discord.utils.get(guild.channels, name=f'debate-moderators')
-            await dmodChannel.send('Knock Knock. A Debate is about to Happen. Anyone willing to Moderate?')
+            if not debugMode:
+                dmodChannel = discord.utils.get(guild.channels, name=f'debate-moderators')
+                await dmodChannel.send('Knock Knock. A Debate is about to Happen. Anyone willing to Moderate?')
 
         # Add participant to debate
         elif text.startswith('addme'):
@@ -249,25 +272,25 @@ async def on_message(message):
                 return
 
             # Ensure debate <ID> is open
-            if not debateOpen(guild, debateID):
+            if debateID not in openIDs:
                 await message.channel.send(f'Sorry {authorStr}, debate {debateID} is not open')
                 return
 
             debateList = debateLists[debateID]
-            debateMod = debateList['mod']
+            debateModID = debateList['modID']
             maxCapacity = debateList['max']
-            forList = debateList['for']
-            againstList = debateList['against']
+            forIDs = debateList['for']
+            againstIDs = debateList['against']
 
             if debateList['nMembers'] == maxCapacity:
                 await message.channel.send(f'Sorry {authorStr}, debate **{debateID}** has reached max capacity ({maxCapacity})')
                 return
 
-            if author in (forList + againstList):
+            if authorID in (forIDs + againstIDs):
                 await message.channel.send(f'User {authorStr} is already in debate {debateID}')
                 return
 
-            if author == debateMod:
+            if authorID == debateModID:
                 await message.channel.send(f'User {authorStr} is the moderator for debate {debateID}, cannot be a participant too')
                 return
 
@@ -277,30 +300,30 @@ async def on_message(message):
             randomStance = 'Against' if random.randint(0, 1) else 'For'
 
             if maxCapacity % 2 == 0:
-                if len(forList) == half:
+                if len(forIDs) == half:
                     stance = 'Against'
-                elif len(againstList) == half:
+                elif len(againstIDs) == half:
                     stance = 'For'
                 else:
                     stance = randomStance
             else:
-                if len(forList) == half:
-                    if len(againstList) == half:
+                if len(forIDs) == half:
+                    if len(againstIDs) == half:
                         stance = randomStance
                     else:
                         stance = 'Against'
-                elif len(againstList) == half:
+                elif len(againstIDs) == half:
                     stance = 'For'
                 else:
                     stance = randomStance
 
             # Assign role and stance
             if stance == 'For':
-                forList.append(author)
+                forIDs.append(authorID)
                 forRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : For')
                 await author.add_roles(forRole)
             else:
-                againstList.append(author)
+                againstIDs.append(authorID)
                 againstRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Against')
                 await author.add_roles(againstRole)
 
@@ -317,16 +340,16 @@ async def on_message(message):
                 return
 
             # Ensure debate <ID> is open
-            if not debateOpen(guild, debateID):
+            if debateID not in openIDs:
                 await message.channel.send(f'Sorry {authorStr}, debate {debateID} is not open')
                 return
 
             debateList = debateLists[debateID]
-            debateMod = debateList['mod']
-            debateMembers = debateList['for'] + debateList['against']
+            debateModID = debateList['modID']
+            debateMemberIDs = debateList['for'] + debateList['against']
 
-            # ensure author isnt participants
-            if author in debateMembers:
+            # Ensure author is not a participant
+            if authorID in debateMemberIDs:
                 await message.channel.send(f'User {authorStr} is a participant in debate {debateID}, cannot be a moderator too')
                 return
 
@@ -337,12 +360,12 @@ async def on_message(message):
                 return
 
             # Ensure debate <ID> does not already have mod
-            if debateMod is not None:
-                await message.channel.send(f'Sorry user {authorStr}, debate {debateID} already has moderator {debateMod}')
+            if debateModID is not None:
+                await message.channel.send(f'Sorry user {authorStr}, debate {debateID} already has moderator')
                 return
 
             # Assign mod role to author
-            debateList['mod'] = author
+            debateList['modID'] = authorID
 
             modRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Mod')
             await author.add_roles(modRole)
@@ -358,91 +381,95 @@ async def on_message(message):
                 return
 
             # Ensure debate <ID> is open
-            if not debateOpen(guild, debateID):
-                await message.channel.send(f'Sorry {authorStr}, debate {debateID} is not open')
+            if debateID not in openIDs:
+                await message.channel.send(f'Debate {debateID} is not open')
                 return
 
             debateList = debateLists[debateID]
-            debateMod = debateList['mod']
+            debateModID = debateList['modID']
 
             # Ensure only 'Moderator' or debate's moderator can balance debate
             isMod = discord.utils.get(author.roles, name="Moderator")
-            if (not isMod) and (author != debateMod):
+            if (not isMod) and (authorID != debateModID):
                 await message.channel.send(f'Only server moderators or the debate moderator can balance the stances')
                 return
 
             # Split members into 2 stances
-            members = debateList['for'] + debateList['against']
-            random.shuffle(members)
-            mid = len(members) // 2
-            sections = [members[:mid], members[mid:]]
+            memberIDs = debateList['for'] + debateList['against']
+            random.shuffle(memberIDs)
+            mid = len(memberIDs) // 2
+            sections = [memberIDs[:mid], memberIDs[mid:]]
             random.shuffle(sections)
 
             # Remove old stance roles
             forRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : For')
             againstRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Against')
 
-            for user in debateList['for']:
+            for userID in debateList['for']:
+                user = guild.get_member(userID)
                 await user.remove_roles(forRole)
 
-            for user in debateList['against']:
+            for userID in debateList['against']:
+                user = guild.get_member(userID)
                 await user.remove_roles(againstRole)
 
             # Assign new stance roles
             debateList['for'] = sections[0]
             debateList['against'] = sections[1]
 
-            for user in debateList['for']:
+            for userID in debateList['for']:
+                user = guild.get_member(userID)
                 await user.add_roles(forRole)
                 await message.channel.send(f'{str(user)} was assigned stance **\'For\'** for debate **{debateID}**')
 
-            for user in debateList['against']:
+            for userID in debateList['against']:
+                user = guild.get_member(userID)
                 await user.add_roles(againstRole)
                 await message.channel.send(f'{str(user)} was assigned stance **\'Against\'** for debate **{debateID}**')
 
             await message.channel.send(f'Debate {debateID} stances balanced')
 
-            membersStr = ', '.join(list(map(str, members)))
+            memberIDs = debateList['for'] + debateList['against']
+            membersStr = list(map(lambda userID : str(guild.get_member(userID)), memberIDs))
             maxCapacity = debateList['max']
             nMembers = debateList['nMembers']
-            moderator = debateList['mod']
+            mod = str(guild.get_member(debateList['modID']))
 
-            await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {moderator} | Members : [{membersStr}]')
+            await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {mod} | Members : {membersStr}')
 
         # Remove participant/moderator from debate
         elif text.startswith('remove'):
             post = text[6:]
             parts = post.split('<')
-            num = parts[0]
+            num = parts[0].strip()
             memberID = int(parts[1][2:-1])
 
             if num.isdigit():
-                debateID = int(num)
+                debateID = num
             else:
                 await message.channel.send(f'\'{num}\' is an invalid number')
                 return
 
-            # Ensure debate <ID> is open
-            if not debateOpen(guild, debateID):
-                await message.channel.send(f'Sorry {authorStr}, debate {debateID} is not open')
+            if debateID not in openIDs:
+                await message.channel.send(f'Debate {debateID} is not open')
                 return
 
             debateList = debateLists[debateID]
-            debateMod = debateList['mod']
+            debateModID = debateList['modID']
 
             # Ensure only 'Moderator' or debate moderator can remove members
             isMod = discord.utils.get(author.roles, name="Moderator")
-            if (not isMod) and (author != debateMod):
+            if (not isMod) and (authorID != debateModID):
                 await message.channel.send(f'Only server moderators or the debate moderator can remove members')
                 return
 
-            forIDs = [m.id for m in debateList['for']]
-            againstIDs = [m.id for m in debateList['against']]
+            forIDs = debateList['for']
+            againstIDs = debateList['against']
 
             if memberID in forIDs:
                 member = guild.get_member(memberID)
                 forRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : For')
-                debateList['for'].remove(member)
+                debateList['for'].remove(memberID)
                 debateList['nMembers'] -= 1
 
                 await member.remove_roles(forRole)
@@ -451,14 +478,14 @@ async def on_message(message):
             elif memberID in againstIDs:
                 member = guild.get_member(memberID)
                 againstRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Against')
-                debateList['against'].remove(member)
+                debateList['against'].remove(memberID)
                 debateList['nMembers'] -= 1
 
                 await member.remove_roles(againstRole)
                 await message.channel.send(f'Removed {str(member)} from debate {debateID}')
 
             # Remove mod role from author
-            elif (debateMod is not None) and (memberID == debateMod.id):
+            elif memberID == debateModID:
                 debateList['mod'] = None
                 modRole = discord.utils.get(guild.roles, name=f'Debate {debateID} : Mod')
                 await author.remove_roles(modRole)
@@ -476,18 +503,19 @@ async def on_message(message):
                 return
 
             # Ensure debate <ID> is open
-            if not debateOpen(guild, debateID):
-                await message.channel.send(f'Sorry {authorStr}, debate {debateID} is not open')
+            if debateID not in openIDs:
+                await message.channel.send(f'Debate {debateID} is not open')
                 return
 
             debateList = debateLists[debateID]
+            del debateLists[debateID]
             openIDs.remove(debateID)
-
-            debateMod = debateList['mod']
+            
+            debateModID = debateList['modID']
 
             # Ensure only 'Moderator' or debate moderator can close the debate
             isMod = discord.utils.get(author.roles, name="Moderator")
-            if (not isMod) and (author != debateMod):
+            if (not isMod) and (authorID != debateModID):
                 await message.channel.send(f'Only server moderators or the debate moderator can close the debate')
                 return
 
@@ -514,21 +542,21 @@ async def on_message(message):
             await againstRole.delete()
             await modRole.delete()
 
-            availableIDs.add(debateID)
+            availableIDs.add(int(debateID))
             await message.channel.send(f'Debate {debateID} closed')
 
         # Show list of debates
         elif text.startswith('show'):
             # Print details for all open debates
             if len(text) == 4:
-                await message.channel.send(f'{len(openIDs)} open debate(s):')
-                for openID in openIDs:
+                await message.channel.send(f'{len(debateLists)} open debate(s):')
+                for openID in debateLists:
                     debateList = debateLists[openID]
                     maxCapacity = debateList['max']
                     nMembers = debateList['nMembers']
-                    moderator = str(debateList['mod'])
+                    mod = str(guild.get_member(debateList['modID']))
 
-                    await message.channel.send(f'Debate {openID} ({nMembers}/{maxCapacity})\t|\tMod: {moderator}')
+                    await message.channel.send(f'Debate {openID} ({nMembers}/{maxCapacity})\t|\tMod: {mod}')
                 return
 
             # Ensure debate ID is valid
@@ -537,23 +565,28 @@ async def on_message(message):
                 return
 
             # Ensure debate <ID> is open
-            if not debateOpen(guild, debateID):
-                await message.channel.send(f'Sorry {authorStr}, debate {debateID} is not open')
+            if debateID not in openIDs:
+                await message.channel.send(f'Debate {debateID} is not open')
                 return
 
             # Print debate <ID> details
             debateList = debateLists[debateID]
-            members = ', '.join(map(str, debateList['for'] + debateList['against']))
+            memberIDs = debateList['for'] + debateList['against']
+            membersStr = list(map(lambda userID : str(guild.get_member(userID)), memberIDs))
             maxCapacity = debateList['max']
             nMembers = debateList['nMembers']
-            moderator = str(debateList['mod'])
+            mod = str(guild.get_member(debateList['modID']))
 
-            await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {moderator} | Members : [{members}]')
+            await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {mod} | Members : {membersStr}')
+        else:
+            return
 
+        await expChannel.send(f'<log>{debateLists}')
+        
         ############################################################
+        
     except Exception as e:
         await logError(f'**{type(e).__name__}** :\n{e}')
 
 ########################################
-
 client.run('NzE1MTc1OTkzNzgyMDQyNjg2.XtUc0g.cW0V6mB8xyLl_QcdVpdG3GJ1Tv0')
