@@ -578,6 +578,8 @@ async def on_message(message):
             mod = str(guild.get_member(debateList['modID']))
 
             await message.channel.send(f'Debate {debateID} ({nMembers}/{maxCapacity}) | Mod: {mod} | Members : {membersStr}')
+            return
+        
         else:
             return
 
