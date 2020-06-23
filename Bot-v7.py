@@ -103,6 +103,12 @@ async def fetchNumber(message, text):
         return text
     await message.channel.send(f'\'{text}\' is an invalid number')
 
+# Informs me when bot comes online
+@client.event
+async def on_ready():
+    ohGuild = client.get_guild(714853767841054721)
+    expChannel = discord.utils.get(ohGuild.channels, name='experiments')
+    await expChannel.send('<@!693797662960386069> Bot Online.')
 
 # Respond to messages
 @client.event
