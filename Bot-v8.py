@@ -35,11 +35,9 @@ Changes (since last meeting):
 
 import discord
 import random
-from time import sleep
-import asyncio
-import json
 from os import listdir
 from socket import gethostname
+import traceback
 
 client = discord.Client()
 
@@ -72,6 +70,7 @@ async def getDebateLists(guild):
     async for msg in expChannel.history(limit=100, oldest_first=False):
         if (msg.author.id == client.user.id) and (msg.content.startswith('<log>')):             
             return eval(msg.content[5:])
+    return dict()
 
 despace = lambda s: s.replace(' ', '')
 commandPrefix = '!'
@@ -80,8 +79,9 @@ mEmoji = 'Ⓜ'
 
 ########################################
 
+
+# Log an error message and print if debugMode is on
 async def logError(myText):
-    ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
     if debugMode:
         print(str(myText))
@@ -106,12 +106,11 @@ async def fetchNumber(message, text):
 # Informs me when bot comes online
 @client.event
 async def on_ready():
-    global availableIDs, openIDs, debateLists
+    global availableIDs, openIDs, debateLists, ohGuild
     
-    print('Started Bot')
     ohGuild = client.get_guild(714853767841054721)
     expChannel = discord.utils.get(ohGuild.channels, name='experiments')
-    await expChannel.send('<@!693797662960386069> Bot Online.')
+    logError('Bot Online')
     
     debateLists = await getDebateLists(ohGuild)
     openIDs = set(debateLists.keys())
@@ -128,6 +127,11 @@ async def on_message(message):
         authorStr = str(author)
         authorID = author.id
         guild = message.guild
+        
+        if guild is None:
+            await logError(f'Guild is None : {text} by {authorStr}')
+            return
+            
         expChannel = discord.utils.get(guild.channels, name='experiments')
 
         # Let Vikhyat debug code
@@ -136,15 +140,15 @@ async def on_message(message):
                 code = text[6:]
                 try:
                     await message.channel.send(str(eval(code)))
-                except Exception as e:
-                    await message.channel.send(f'{type(e).__name__} :\n{e}')
+                except Exception:
+                    await logError(traceback.format_exc())
 
             elif text.startswith('!exec'):
                 code = text[6:]
                 try:
                     await message.channel.send(str(exec(code)))
-                except Exception as e:
-                    await message.channel.send(f'{type(e).__name__} :\n{e}')
+                except Exception:
+                    await logError(traceback.format_exc())
 
             elif text.startswith('!clear'):
                 await expChannel.send('<log>{}')
@@ -588,7 +592,7 @@ async def on_message(message):
         ############################################################
         
     except Exception as e:
-        await logError(f'**{type(e).__name__}** :\n{e}')
+        await logError(traceback.format_exc())#f'**{type(e).__name__}** :\n{e}')
 
 ########################################
 client.run('NzE1MTc1OTkzNzgyMDQyNjg2.XtUc0g.cW0V6mB8xyLl_QcdVpdG3GJ1Tv0')
