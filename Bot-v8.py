@@ -85,15 +85,18 @@ async def logError(myText):
     expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
     if debugMode:
         print(str(myText))
-    await expChannel.send('<@!693797662960386069> Log: ' + str(myText))
+    await expChannel.send('<@!693797662960386069> **Log**: ' + str(myText))
 
 
 # Greet new users on DM
 @client.event
 async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(f'Hi {member.name}, welcome to the **Openhouse Debate Club** Server!')
-    await member.dm_channel.send(welcomeMessage)
+    try:
+        await member.create_dm()
+        await member.dm_channel.send(f'Hi {member.name}, welcome to the **Openhouse Debate Club** Server!')
+        await member.dm_channel.send(welcomeMessage)
+    except Exception as e:
+        await logError(f'Member join : {traceback.format_exc()}')
 
 
 # Fetch a number from text
@@ -106,15 +109,19 @@ async def fetchNumber(message, text):
 # Informs me when bot comes online
 @client.event
 async def on_ready():
-    global availableIDs, openIDs, debateLists, ohGuild
-    
-    ohGuild = client.get_guild(714853767841054721)
-    expChannel = discord.utils.get(ohGuild.channels, name='experiments')
-    logError('Bot Online')
-    
-    debateLists = await getDebateLists(ohGuild)
-    openIDs = set(debateLists.keys())
-    availableIDs = availableIDs.difference(set(map(int, openIDs)))
+    try:
+        global availableIDs, openIDs, debateLists, ohGuild
+        
+        ohGuild = client.get_guild(714853767841054721)
+        expChannel = discord.utils.get(ohGuild.channels, name='experiments')
+        await logError('Bot Online')
+        
+        debateLists = await getDebateLists(ohGuild)
+        openIDs = set(debateLists.keys())
+        availableIDs = availableIDs.difference(set(map(int, openIDs)))
+        
+    except Exception as e:
+        await logError(traceback.format_exc())
     
 # Respond to messages
 @client.event
@@ -592,7 +599,7 @@ async def on_message(message):
         ############################################################
         
     except Exception as e:
-        await logError(traceback.format_exc())#f'**{type(e).__name__}** :\n{e}')
+        await logError(traceback.format_exc())
 
 ########################################
 client.run('NzE1MTc1OTkzNzgyMDQyNjg2.XtUc0g.cW0V6mB8xyLl_QcdVpdG3GJ1Tv0')
