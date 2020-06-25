@@ -35,9 +35,9 @@ Changes (since last meeting):
 
 import discord
 import random
-from os import listdir
 from socket import gethostname
 import traceback
+import os
 
 client = discord.Client()
 
@@ -51,7 +51,7 @@ allRulesList = [f'-> {ruleNum} : {rule}' for ruleNum, rule in rules.items()]
 allRules = 'All Rules:\n' + '\n'.join(allRulesList)
 
 welcomeMessage = '''Thank you for joining Openhouse Debate Club on Discord, we are so excited to have you on board!
-Don’t worry if the new system seems challenging, we are here to help. All the channels here are like different group chats where you can discuss anything you want (channel=chat). Our announcements page will show you the debates you can sign up for. On that debate text, please select the ‘👍’ (thumbs-up) emoji. You will immediately be placed into your team. Introduce yourself to your teammates and get ready to battle it out in your debate! Motions and links for your debate will be sent to you on the channel itself.
+Don’t worry if the new system seems challenging, we are here to help. All the channels here are like different group chats where you can discuss anything you want (channel=chat). Our announcements page will show you the debates you can sign up for, with instructions on signing up. You will immediately be placed into your team. Introduce yourself to your teammates and get ready to battle it out in your debate! Motions and links for your debate will be sent to you on the channel itself.
 Please feel free to message us if you are facing any difficulties. Until then, choose to be better :)'''
 
 debateFormatInfo = '''Hello users,
@@ -74,8 +74,6 @@ async def getDebateLists(guild):
 
 despace = lambda s: s.replace(' ', '')
 commandPrefix = '!'
-thumbEmoji = '👍'
-mEmoji = 'Ⓜ'
 
 ########################################
 
@@ -602,4 +600,9 @@ async def on_message(message):
         await logError(traceback.format_exc())
 
 ########################################
-client.run('NzE1MTc1OTkzNzgyMDQyNjg2.XtUc0g.cW0V6mB8xyLl_QcdVpdG3GJ1Tv0')
+
+if debugMode:
+    client.run(open('BOT_TOKEN.txt', 'r').read())
+else:
+    client.run(str(os.environ.get('BOT_TOKEN')))
+    
