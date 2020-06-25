@@ -1,0 +1,11 @@
+Features:
+	State Rules
+	State debate format
+	Welcome new users with welcome message
+	Send query directly to mods
+	Start debate with _ max people, random stance (only mod can start)
+	Users add themselves to a debate and get random stance
+	Balance debate stance assignment (only mod)
+	Remove users (only mod)
+	Close debate (only mod)
+	Show open debates

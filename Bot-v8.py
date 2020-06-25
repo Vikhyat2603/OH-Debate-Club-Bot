@@ -399,8 +399,9 @@ async def on_message(message):
 
             # Ensure only 'Moderator' or debate's moderator can balance debate
             isMod = discord.utils.get(author.roles, name="Moderator")
-            if (not isMod) and (authorID != debateModID):
-                await message.channel.send(f'Only server moderators or the debate moderator can balance the stances')
+            if (not isMod):# and (authorID != debateModID):
+                #or the debate moderator
+                await message.channel.send(f'Only server moderators can balance the stances')
                 return
 
             # Split members into 2 stances
@@ -468,8 +469,9 @@ async def on_message(message):
 
             # Ensure only 'Moderator' or debate moderator can remove members
             isMod = discord.utils.get(author.roles, name="Moderator")
-            if (not isMod) and (authorID != debateModID):
-                await message.channel.send(f'Only server moderators or the debate moderator can remove members')
+            if (not isMod):# and (authorID != debateModID):
+                #or the debate moderator
+                await message.channel.send(f'Only server moderators can remove members')
                 return
 
             forIDs = debateList['for']
@@ -524,8 +526,9 @@ async def on_message(message):
 
             # Ensure only 'Moderator' or debate moderator can close the debate
             isMod = discord.utils.get(author.roles, name="Moderator")
-            if (not isMod) and (authorID != debateModID):
-                await message.channel.send(f'Only server moderators or the debate moderator can close the debate')
+            if (not isMod):# and (authorID != debateModID):
+                #or the debate moderator
+                await message.channel.send(f'Only server moderators can close the debate')
                 return
 
             # Delete category and channels
