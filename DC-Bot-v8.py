@@ -74,6 +74,7 @@ async def getDebateLists(guild):
 
 despace = lambda s: s.replace(' ', '')
 commandPrefix = '!'
+jokePath = r'.\jokes.txt'
 
 ########################################
 
@@ -133,11 +134,8 @@ async def on_message(message):
         authorID = author.id
         guild = message.guild
         
-        if guild is None:
-            await logError(f'Guild is None : {text} by {authorStr}')
-            return
-            
-        expChannel = discord.utils.get(guild.channels, name='experiments')
+        if guild is not None:
+            expChannel = discord.utils.get(guild.channels, name='experiments')
 
         # Let Vikhyat debug code
         if (authorStr == 'Vikhyat#5088'):
@@ -183,6 +181,11 @@ async def on_message(message):
             await message.channel.send(f'Hello there, {author}!')
             return
 
+        if text == 'joke':
+            joke = random.choice(open(jokePath, 'r').readlines()).strip()
+            await message.channel.send(joke)
+            return
+
         ############################################################
         
         # State debate format details
@@ -204,6 +207,8 @@ async def on_message(message):
             return
 
         ############################################################
+        if guild is None:
+            return
         
         # Start debate with fixed max capacity
         if text.startswith('debatewith'):
@@ -568,7 +573,7 @@ async def on_message(message):
                     nMembers = debateList['nMembers']
                     mod = str(guild.get_member(debateList['modID']))
 
-                    await message.channel.send(f'Debate {openID} ({nMembers}/{maxCapacity})\t|\tMod: {mod}')
+                    await message.channel.send(f'-> Debate {openID} ({nMembers}/{maxCapacity})\t|\tMod: {mod}')
                 return
 
             # Ensure debate ID is valid

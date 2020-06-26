@@ -1,1 +1,1 @@
-worker: python Bot-v8.py
+worker: python DC-Bot-v8.py
