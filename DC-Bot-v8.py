@@ -148,7 +148,7 @@ async def on_message(message):
             return
 
         if text == 'joke':
-            joke = random.choice(open(r'assets\jokes.txt', 'r').readlines()).strip()
+            joke = random.choice(open('assets/jokes.txt', 'r').readlines()).strip()
             await message.channel.send(joke)
             return
 
