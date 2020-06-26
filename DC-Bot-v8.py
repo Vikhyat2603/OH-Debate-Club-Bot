@@ -113,7 +113,7 @@ async def on_ready():
         
         ohGuild = client.get_guild(714853767841054721)
         expChannel = discord.utils.get(ohGuild.channels, name='experiments')
-        await logError('Bot Online')
+        await logError('Bot is Online')
         
         debateLists = await getDebateLists(ohGuild)
         openIDs = set(debateLists.keys())
