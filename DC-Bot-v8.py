@@ -39,7 +39,7 @@ else:
 
 async def getDebateLists(guild):
     expChannel = discord.utils.get(guild.channels, name='experiments')
-    async for msg in expChannel.history(limit=100, oldest_first=False):
+    async for msg in expChannel.history(limit=500, oldest_first=False):
         if (msg.author.id == client.user.id) and (msg.content.startswith('<log>')):             
             return eval(msg.content[5:])
     return dict()
