@@ -7,6 +7,7 @@ import os
 client = discord.Client()
 
 ########################################
+
 rules = {'rule1': 'sample rule 1 text',
          'rule2': 'sample rule 2 text',
          'rule3': 'sample rule 3 text',
@@ -45,7 +46,6 @@ async def getDebateLists(guild):
 
 despace = lambda s: s.replace(' ', '')
 commandPrefix = '!'
-jokePath = r'jokes.txt'
 
 ########################################
 # Log an error message and print if debugMode is on
@@ -148,7 +148,7 @@ async def on_message(message):
             return
 
         if text == 'joke':
-            joke = random.choice(open(jokePath, 'r').readlines()).strip()
+            joke = random.choice(open(r'assets\jokes.txt', 'r').readlines()).strip()
             await message.channel.send(joke)
             return
 
