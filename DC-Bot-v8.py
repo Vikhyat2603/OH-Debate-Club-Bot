@@ -74,7 +74,7 @@ async def getDebateLists(guild):
 
 despace = lambda s: s.replace(' ', '')
 commandPrefix = '!'
-jokePath = r'.\jokes.txt'
+jokePath = r'jokes.txt'
 
 ########################################
 
