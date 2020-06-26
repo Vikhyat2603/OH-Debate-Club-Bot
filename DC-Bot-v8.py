@@ -1,38 +1,3 @@
-'''
-Changes (since last meeting):
-    DONE :
-    ->  DONE 'Moderator' role can close any debate
-    ->  DONE only admins can start debates
-    ->  DONE show <id> also lists members
-    ->  DONE balance <id>
-    ->  DONE moderate by reacting with M?
-    ->  DONE opt-out by de-selecting
-    ->  DONE !query (anonymous?)
-    ->  DONE dont let ppl opt-out
-    ->  DONE let debate mods and mods remove person <> from debate <>
-
-    --- 17-Jun-20
-    ->  Wrap code in try-except
-    ->  add voice channel to debate category
-    ->  incorporated 'knock knock' message into bot
-    ->  Change debatewith command to allow random text after max. cap.
-    ->  Participants join by "!add me <ID>"
-    ->  Moderators join by "!moderator <ID>"
-    ->  Moderators can't be participants
-
-    --23-Jun-20
-    ->  debateLists is now saved and sent as string with every action
-
-    TODO :
-    ->  send motion at fixed time
-    ->  create manual
-    ->  get rules and format details
-
-    --- 17-Jun-20
-    ->  Discussion room
-    ->  wait-list people if debate full
-'''
-
 import discord
 import random
 from socket import gethostname
@@ -64,9 +29,15 @@ openIDs = set()
 
 debugMode = (gethostname() == 'VKSN-Desktop')
 
+if debugMode:
+    botToken, guildID = open('DCbotInfo.txt', 'r').readlines()
+    guildID = int(guildID)
+else:
+    botToken = str(os.environ.get('BOT_TOKEN'))
+    guildID = int(os.environ.get('GUILD_ID'))
+
 async def getDebateLists(guild):
     expChannel = discord.utils.get(guild.channels, name='experiments')
-    
     async for msg in expChannel.history(limit=100, oldest_first=False):
         if (msg.author.id == client.user.id) and (msg.content.startswith('<log>')):             
             return eval(msg.content[5:])
@@ -77,15 +48,12 @@ commandPrefix = '!'
 jokePath = r'jokes.txt'
 
 ########################################
-
-
 # Log an error message and print if debugMode is on
 async def logError(myText):
     expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
     if debugMode:
         print(str(myText))
     await expChannel.send('<@!693797662960386069> **Log**: ' + str(myText))
-
 
 # Greet new users on DM
 @client.event
@@ -97,13 +65,11 @@ async def on_member_join(member):
     except Exception as e:
         await logError(f'Member join : {traceback.format_exc()}')
 
-
 # Fetch a number from text
 async def fetchNumber(message, text):
     if text.isdigit():
         return text
     await message.channel.send(f'\'{text}\' is an invalid number')
-
 
 # Informs me when bot comes online
 @client.event
@@ -111,7 +77,7 @@ async def on_ready():
     try:
         global availableIDs, openIDs, debateLists, ohGuild
         
-        ohGuild = client.get_guild(714853767841054721)
+        ohGuild = client.get_guild(guildID)
         expChannel = discord.utils.get(ohGuild.channels, name='experiments')
         await logError('Bot is Online')
         
@@ -608,9 +574,4 @@ async def on_message(message):
         await logError(traceback.format_exc())
 
 ########################################
-
-if debugMode:
-    client.run(open('BOT_TOKEN.txt', 'r').read())
-else:
-    client.run(str(os.environ.get('BOT_TOKEN')))
-    
+client.run(botToken)
