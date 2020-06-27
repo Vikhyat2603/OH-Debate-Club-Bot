@@ -29,11 +29,9 @@ openIDs = set()
 debugMode = (gethostname() == 'VKSN-Desktop')
 
 if debugMode:
-    botToken, guildID = open('DCbotInfo.txt', 'r').readlines()
-    guildID = int(guildID)
+    botToken = open('BOT_TOKEN.txt', 'r').read()
 else:
     botToken = str(os.environ.get('BOT_TOKEN'))
-    guildID = int(os.environ.get('GUILD_ID'))
 
 async def getDebateLists(guild):
     expChannel = discord.utils.get(guild.channels, name='experiments')
@@ -75,7 +73,7 @@ async def on_ready():
     try:
         global availableIDs, openIDs, debateLists, ohGuild
         
-        ohGuild = client.get_guild(guildID)
+        ohGuild = client.get_guild(714853767841054721)
         expChannel = discord.utils.get(ohGuild.channels, name='experiments')
         await logError('Bot is Online')
         
