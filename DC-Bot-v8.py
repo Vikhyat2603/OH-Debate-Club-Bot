@@ -3,7 +3,6 @@ import random
 from socket import gethostname
 import traceback
 import os
-from time import sleep
 
 client = discord.Client()
 
@@ -71,19 +70,14 @@ async def fetchNumber(message, text):
 # Informs me when bot comes online
 @client.event
 async def on_ready():
-    try:
-        global availableIDs, openIDs, debateLists
+    global availableIDs, openIDs, debateLists
 
-        guild = client.guilds[0]
-        expChannel = discord.utils.get(guild.channels, name='experiments')
-        await logError(client.guilds[0], 'Bot is Online')
-        
-        debateLists = await getDebateLists(guild)
-        openIDs = set(debateLists.keys())
-        availableIDs = availableIDs.difference(set(map(int, openIDs)))
-        
-    except Exception as e:
-        await logError(client.guilds[0], traceback.format_exc())
+    guild = client.guilds[0]
+    await logError(guild, 'Bot is Online')
+    
+    debateLists = await getDebateLists(guild)
+    openIDs = set(debateLists.keys())
+    availableIDs = availableIDs.difference(set(map(int, openIDs)))
     
 # Respond to messages
 @client.event
