@@ -3,6 +3,7 @@ import random
 from socket import gethostname
 import traceback
 import os
+from time import sleep
 
 client = discord.Client()
 
@@ -45,8 +46,8 @@ commandPrefix = '!'
 
 ########################################
 # Log an error message and print if debugMode is on
-async def logError(myText):
-    expChannel = discord.utils.get(ohGuild.channels, name=f'experiments')
+async def logError(guild, myText):
+    expChannel = discord.utils.get(guild.channels, name=f'experiments')
     if debugMode:
         print(str(myText))
     await expChannel.send('<@!693797662960386069> **Log**: ' + str(myText))
@@ -59,7 +60,7 @@ async def on_member_join(member):
         await member.dm_channel.send(f'Hi {member.name}, welcome to the **Openhouse Debate Club** Server!')
         await member.dm_channel.send(welcomeMessage)
     except Exception as e:
-        await logError(f'Member join : {traceback.format_exc()}')
+        await logError(client.guilds[0], f'Member join : {traceback.format_exc()}')
 
 # Fetch a number from text
 async def fetchNumber(message, text):
@@ -71,18 +72,18 @@ async def fetchNumber(message, text):
 @client.event
 async def on_ready():
     try:
-        global availableIDs, openIDs, debateLists, ohGuild
+        global availableIDs, openIDs, debateLists
+
+        guild = client.guilds[0]
+        expChannel = discord.utils.get(guild.channels, name='experiments')
+        await logError(client.guilds[0], 'Bot is Online')
         
-        ohGuild = client.get_guild(714853767841054721)
-        expChannel = discord.utils.get(ohGuild.channels, name='experiments')
-        await logError('Bot is Online')
-        
-        debateLists = await getDebateLists(ohGuild)
+        debateLists = await getDebateLists(guild)
         openIDs = set(debateLists.keys())
         availableIDs = availableIDs.difference(set(map(int, openIDs)))
         
     except Exception as e:
-        await logError(traceback.format_exc())
+        await logError(client.guilds[0], traceback.format_exc())
     
 # Respond to messages
 @client.event
@@ -106,14 +107,14 @@ async def on_message(message):
                 try:
                     await message.channel.send(str(eval(code)))
                 except Exception:
-                    await logError(traceback.format_exc())
+                    await logError(client.guilds[0], traceback.format_exc())
 
             elif text.startswith('!exec'):
                 code = text[6:]
                 try:
                     await message.channel.send(str(exec(code)))
                 except Exception:
-                    await logError(traceback.format_exc())
+                    await logError(client.guilds[0], traceback.format_exc())
 
             elif text.startswith('!clear'):
                 await expChannel.send('<log>{}')
@@ -567,7 +568,7 @@ async def on_message(message):
         ############################################################
         
     except Exception as e:
-        await logError(traceback.format_exc())
+        await logError(client.guilds[0], traceback.format_exc())
 
 ########################################
 client.run(botToken)
