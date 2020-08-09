@@ -113,6 +113,7 @@ async def on_message(message):
             elif text.startswith('!clear'):
                 await expChannel.send('<log>{}')
                 await message.channel.send(f'Emptied debateLists')
+                debateLists = {}
 
             elif text.startswith('!check'):
                 await message.channel.send(await getDebateLists(guild))
